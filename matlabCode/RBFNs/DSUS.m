@@ -1,25 +1,4 @@
 function [Pre,Rec, F1,ACCU] = DSUS(Tra,Tes,TraLab,TesLab)
-% RBF Neural Networks (Parameters are selected using K-means Clustering)
-% Parameter (K: Number of Kernels)
-% RBFNN have 5 parameters for optimization: 
-% 1- The weights between the hidden layer and the output layer. 
-% 2- The activation function. 
-% 3- The center of activation functions. 
-% 4- The distribution of center of activation functions. 
-% 5- The number of hidden neurons. 
-
-% The weights between the hidden layer and the output layer are calculated by using Moore-Penrose generalized pseudo-inverse. This algorithm overcomes many issues in traditional gradient algorithms such as stopping criterion, learning rate, number of epochs and local minima. Due to its shorter training time and generalization ability, it is suitable for real-time applications. 
-% The radial basis function selected is usually a Gaussian kernel for pattern recognition application. 
-% Generally the center and distribution of activation functions should have characteristic similar to data. Here, the center and width of Gaussians are selected using Kmeans clustering algorithm. 
-% Based on universal approximation theory center and distribution of activation functions are not deterministic if the numbers of hidden neurons being sufficient enough, one can say that the single hidden layer feed-forward network with sufficient number of hidden neurons can approximate any function to any arbitrary level of accuracy.
-
-% Alireza Asvadi
-% Department of ECE, SPR Lab
-% Babol (Noshirvani) University of Technology
-% Questions regarding the code may be directed to:
-% http://www.a-asvadi.ir/
-% 2013
-%% Clear Memory & Command Window
 
 %% Generate Points & Labels
 % Features and Classes (Fr: feature train, Fs: feature test, Lr: label train, Ls: label test)  
