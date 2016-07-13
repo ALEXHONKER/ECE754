@@ -37,6 +37,15 @@ public class evalRes {
 		System.out.println("R:"+rec);
 		System.out.println("F1:"+fmeasure);
 	}
+	public void reset(){
+		this.pre=0;
+		this.rec=0;
+		this.fmeasure=0;
+		this.TP=0;
+		this.FP=0;
+		this.FN=0;
+		this.TN=0;
+	}
 	public String printResString(){
 		return "P:"+pre+"\n"+"R:"+rec+"\n"+"F1:"+fmeasure+"\n";
 	}

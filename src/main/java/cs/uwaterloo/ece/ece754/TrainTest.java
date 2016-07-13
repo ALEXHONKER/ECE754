@@ -1,10 +1,14 @@
 package cs.uwaterloo.ece.ece754;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 
+import org.apache.commons.math3.stat.inference.MannWhitneyUTest;
+
+import ca.uwaterloo.ece.ece754.utils.Util;
 import weka.attributeSelection.ASEvaluation;
 import weka.attributeSelection.AttributeSelection;
 import weka.attributeSelection.PrincipalComponents;
@@ -30,11 +34,15 @@ public class TrainTest {
 	 * 				  3: with feature reduction (with SMOTE resample)
 	 * @param rmOption	remove option for the training & test dataset, e.g., "-R 12-13"
 	 */
-	public evalRes getTestRes(String projName, int num, int option, String[] rmOption){ // option means the trianing method:
+	public evalRes getTestRes(String projName, int num, int option, String[] rmOption, File fname){ // option means the trianing method:
 		evalRes res=new evalRes();
+		
+		String resCSV="F1,";
 		if(option==0){
 			for(int i=0;i<num;i++){
 				double[][] tempRes=trainWithoutResample(projName,i,rmOption);
+				resCSV+=Util.getF1(tempRes);
+				resCSV+=",";
 				res.TN+=tempRes[0][0];
 				res.TP+=tempRes[1][1];
 				res.FP+=tempRes[0][1];
@@ -46,6 +54,8 @@ public class TrainTest {
 		}else if(option ==1 ){
 			for(int i=0;i<num;i++){
 				double[][] tempRes=trainWithSMOTEResample(projName,i,rmOption);
+				resCSV+=Util.getF1(tempRes);
+				resCSV+=",";
 				res.TN+=tempRes[0][0];
 				res.TP+=tempRes[1][1];
 				res.FP+=tempRes[0][1];
@@ -57,6 +67,8 @@ public class TrainTest {
 		}else if(option==2){
 			for(int i=0;i<num;i++){
 				double[][] tempRes=trainWithReductionWithResample(projName,i,rmOption);
+				resCSV+=Util.getF1(tempRes);
+				resCSV+=",";
 				res.TN+=tempRes[0][0];
 				res.TP+=tempRes[1][1];
 				res.FP+=tempRes[0][1];
@@ -65,11 +77,320 @@ public class TrainTest {
 				res.printRes();
 			}
 			return res;			
-		}else {
+		}else if(option==4){  // use all data for trainining 
+			String[][] mulOp=null;
+			if(rmOption!=null){
+				mulOp=new String[num][rmOption.length];
+				for(int i=0;i<num;i++){
+					mulOp[i]=rmOption.clone();
+				}
+				for(int i=0;i<num;i++){
+					double[][] tempRes=trainWithSMOTEResampleAllData(projName,i,mulOp[i]);
+					resCSV+=Util.getF1(tempRes);
+					resCSV+=",";
+					res.TN+=tempRes[0][0];
+					res.TP+=tempRes[1][1];
+					res.FP+=tempRes[0][1];
+					res.FN+=tempRes[1][0];
+					System.out.println("index:"+i);
+					res.printRes();
+				}
+			}else{
+				for(int i=0;i<num;i++){
+					double[][] tempRes=trainWithSMOTEResampleAllData(projName,i,rmOption);
+					resCSV+=Util.getF1(tempRes);
+					resCSV+=",";
+					res.TN+=tempRes[0][0];
+					res.TP+=tempRes[1][1];
+					res.FP+=tempRes[0][1];
+					res.FN+=tempRes[1][0];
+					System.out.println("index:"+i);
+					res.printRes();
+				}
+			}
+
+			return res;		
+		}else if(option==5){ // from back to the front
+			String[][] mulOp=null;
+			if(rmOption!=null){
+				mulOp=new String[num][rmOption.length];
+				for(int i=0;i<num;i++){
+					mulOp[i]=rmOption.clone();
+				}
+				for(int i=num-1;i>=0;i--){
+					double[][] tempRes=trainWithSMOTEResampleAllDataSimilarity(projName,i,mulOp[i],num-1);
+					resCSV+=Util.getF1(tempRes);
+					resCSV+=",";
+					res.TN+=tempRes[0][0];
+					res.TP+=tempRes[1][1];
+					res.FP+=tempRes[0][1];
+					res.FN+=tempRes[1][0];
+					System.out.println("index:"+i);
+					res.printRes();
+				}
+			}else{
+				for(int i=num-1;i>=0;i--){
+					double[][] tempRes=trainWithSMOTEResampleAllDataSimilarity(projName,i,rmOption,num-1);
+					resCSV+=Util.getF1(tempRes);
+					resCSV+=",";
+					double pre=tempRes[1][1]/(tempRes[1][1]+tempRes[0][1]);
+					double rec=tempRes[1][1]/(tempRes[1][1]+tempRes[1][0]);
+					System.out.println("index:"+i);
+					System.out.println("pre:"+pre);
+					System.out.println("rec:"+rec);
+					System.out.println("f1:"+pre*rec*2/(pre+rec));
+					res.TN+=tempRes[0][0];
+					res.TP+=tempRes[1][1];
+					res.FP+=tempRes[0][1];
+					res.FN+=tempRes[1][0];
+					
+					//res.printRes();
+				}
+			}
+
+			return res;			
+		}else if(option==6){ // one vs one, the last test set with previous each train set
+			String[][] mulOp=null;
+			if(rmOption!=null){
+				mulOp=new String[num][rmOption.length];
+				for(int i=0;i<num;i++){
+					mulOp[i]=rmOption.clone();
+				}
+				for(int i=num-1;i>=0;i--){
+					double[][] tempRes=trainWithSMOTEResampleOneVsOne(projName,i,mulOp[i],num-1);
+					resCSV+=Util.getF1(tempRes);
+					resCSV+=",";
+					res.TN+=tempRes[0][0];
+					res.TP+=tempRes[1][1];
+					res.FP+=tempRes[0][1];
+					res.FN+=tempRes[1][0];
+					System.out.println("index:"+i);
+					res.printRes();
+					res.reset();
+				}
+			}else{
+				for(int i=num-1;i>=0;i--){
+					double[][] tempRes=trainWithSMOTEResampleOneVsOne(projName,i,rmOption,num-1);
+					resCSV+=Util.getF1(tempRes);
+					resCSV+=",";
+					res.TN+=tempRes[0][0];
+					res.TP+=tempRes[1][1];
+					res.FP+=tempRes[0][1];
+					res.FN+=tempRes[1][0];
+					System.out.println("index:"+i);
+					res.printRes();
+					res.reset();
+				}
+			}
+			resCSV+="\n";
+			Util.res2csvfile(fname, resCSV);
+			return res;			
+		} 
+		else {
 			return null;
 		}
+		
 	}
-	
+	public double[][] trainWithSMOTEResampleOneVsOne(String projName, int id, String[] rmOption,int sum){	
+		try {
+			BufferedReader reader = new BufferedReader(
+					new FileReader("data/mingOri/exp-data/exp-data/"+projName+"/"+id+"/train.arff"));
+			Instances trainData =new Instances(reader);
+			reader.close();
+			String[][] op=null;
+			if(rmOption!=null){
+				op=new String[id+1][rmOption.length];
+				for(int i=0;i<id+1;i++){
+					op[i]=rmOption.clone();
+				}				
+			}
+			
+			if(rmOption!=null){
+				Remove remove=new Remove();
+				remove.setOptions(rmOption);
+				remove.setInputFormat(trainData);
+				trainData=Filter.useFilter(trainData, remove);
+			}
+			
+//			System.out.println("num:"+trainData.numInstances());
+//			System.out.println("attr:"+trainData.numAttributes());
+			trainData.setClassIndex(trainData.numAttributes()-1);
+
+			reader=new BufferedReader(
+					new FileReader("data/mingOri/exp-data/exp-data/"+projName+"/"+sum+"/test.arff"));
+			Instances testData =new Instances(reader);
+			reader.close();
+			if(rmOption!=null){
+				Remove remove=new Remove();
+				remove.setOptions(op[id]);
+				remove.setInputFormat(testData);
+				testData=Filter.useFilter(testData, remove);
+			}
+			testData.setClassIndex(testData.numAttributes()-1);
+			SMOTE sm=new SMOTE();
+			sm.setInputFormat(trainData);
+			trainData=Filter.useFilter(trainData, sm);
+
+			Classifier classifier=new ADTree();
+			String[] options =new String[]{"-B","10","-E","-3"};
+			classifier.setOptions(options);
+			classifier.buildClassifier(trainData);
+			Evaluation eval=new Evaluation(trainData);
+			eval.evaluateModel(classifier, testData);
+			return eval.confusionMatrix();
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return null;
+	}
+	public double[][] trainWithSMOTEResampleAllDataSimilarity(String projName, int id, String[] rmOption,int sum){	
+		try {
+			BufferedReader reader = new BufferedReader(
+					new FileReader("data/mingOri/exp-data/exp-data/"+projName+"/"+sum+"/train.arff"));
+			Instances trainData =new Instances(reader);
+			reader.close();
+			String[][] op=null;
+			if(rmOption!=null){
+				op=new String[id+1][rmOption.length];
+				for(int i=0;i<id+1;i++){
+					op[i]=rmOption.clone();
+				}				
+			}
+			
+			if(rmOption!=null){
+				Remove remove=new Remove();
+				remove.setOptions(rmOption);
+				remove.setInputFormat(trainData);
+				trainData=Filter.useFilter(trainData, remove);
+			}
+			System.out.println("num:"+trainData.numInstances());
+			System.out.println("attr:"+trainData.numAttributes());
+			for(int i=id;i<sum;i++){
+				reader = new BufferedReader(
+						new FileReader("data/mingOri/exp-data/exp-data/"+projName+"/"+i+"/train.arff"));
+				Instances preTrainData=new Instances(reader);
+				if(rmOption!=null){
+					Remove remove=new Remove();
+					remove.setOptions(op[i]);
+					remove.setInputFormat(preTrainData);
+					preTrainData=Filter.useFilter(preTrainData, remove);
+				}
+				//trainData=Instances.mergeInstances(trainData, preTrainData);
+				for(int j=0;i<preTrainData.numInstances();i++){
+					trainData.add(preTrainData.instance(j));
+				}
+			}
+			
+//			System.out.println("num:"+trainData.numInstances());
+//			System.out.println("attr:"+trainData.numAttributes());
+			trainData.setClassIndex(trainData.numAttributes()-1);
+
+			reader=new BufferedReader(
+					new FileReader("data/mingOri/exp-data/exp-data/"+projName+"/"+sum+"/test.arff"));
+			Instances testData =new Instances(reader);
+			reader.close();
+			if(rmOption!=null){
+				Remove remove=new Remove();
+				remove.setOptions(op[id]);
+				remove.setInputFormat(testData);
+				testData=Filter.useFilter(testData, remove);
+			}
+			
+			MannWhitneyUTest mTest=new MannWhitneyUTest();
+//			
+//			System.out.println("TESTnum:"+testData.numInstances());
+//			System.out.println("TESTattr:"+testData.numAttributes());
+			testData.setClassIndex(testData.numAttributes()-1);
+			SMOTE sm=new SMOTE();
+			sm.setInputFormat(trainData);
+			trainData=Filter.useFilter(trainData, sm);
+
+			Classifier classifier=new ADTree();
+			String[] options =new String[]{"-B","10","-E","-3"};
+			classifier.setOptions(options);
+			classifier.buildClassifier(trainData);
+			Evaluation eval=new Evaluation(trainData);
+			eval.evaluateModel(classifier, testData);
+			return eval.confusionMatrix();
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return null;
+	}
+	public double[][] trainWithSMOTEResampleAllData(String projName, int id, String[] rmOption){	
+		try {
+			BufferedReader reader = new BufferedReader(
+					new FileReader("data/mingOri/exp-data/exp-data/"+projName+"/"+id+"/train.arff"));
+			Instances trainData =new Instances(reader);
+			reader.close();
+			String[][] op=null;
+			if(rmOption!=null){
+				op=new String[id+1][rmOption.length];
+				for(int i=0;i<id+1;i++){
+					op[i]=rmOption.clone();
+				}				
+			}
+			
+			if(rmOption!=null){
+				Remove remove=new Remove();
+				remove.setOptions(rmOption);
+				remove.setInputFormat(trainData);
+				trainData=Filter.useFilter(trainData, remove);
+			}
+			System.out.println("num:"+trainData.numInstances());
+			System.out.println("attr:"+trainData.numAttributes());
+			for(int i=0;i<id;i++){
+				reader = new BufferedReader(
+						new FileReader("data/mingOri/exp-data/exp-data/"+projName+"/"+i+"/train.arff"));
+				Instances preTrainData=new Instances(reader);
+				if(rmOption!=null){
+					Remove remove=new Remove();
+					remove.setOptions(op[i]);
+					remove.setInputFormat(preTrainData);
+					preTrainData=Filter.useFilter(preTrainData, remove);
+				}
+				//trainData=Instances.mergeInstances(trainData, preTrainData);
+				for(int j=0;i<preTrainData.numInstances();i++){
+					trainData.add(preTrainData.instance(j));
+				}
+			}
+			
+			System.out.println("num:"+trainData.numInstances());
+			System.out.println("attr:"+trainData.numAttributes());
+			trainData.setClassIndex(trainData.numAttributes()-1);
+
+			reader=new BufferedReader(
+					new FileReader("data/mingOri/exp-data/exp-data/"+projName+"/"+id+"/test.arff"));
+			Instances testData =new Instances(reader);
+			reader.close();
+			if(rmOption!=null){
+				Remove remove=new Remove();
+				remove.setOptions(op[id]);
+				remove.setInputFormat(testData);
+				testData=Filter.useFilter(testData, remove);
+			}
+			System.out.println("TESTnum:"+testData.numInstances());
+			System.out.println("TESTattr:"+testData.numAttributes());
+			testData.setClassIndex(testData.numAttributes()-1);
+			SMOTE sm=new SMOTE();
+			sm.setInputFormat(trainData);
+			trainData=Filter.useFilter(trainData, sm);
+
+			Classifier classifier=new ADTree();
+			String[] options =new String[]{"-B","10","-E","-3"};
+			classifier.setOptions(options);
+			classifier.buildClassifier(trainData);
+			Evaluation eval=new Evaluation(trainData);
+			eval.evaluateModel(classifier, testData);
+			return eval.confusionMatrix();
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return null;
+	}
 	public double[][] trainWithReductionWithResample(String projName, int id, String[] rmOption){
 
 		BufferedReader reader;
@@ -101,46 +422,21 @@ public class TrainTest {
 				testData=Filter.useFilter(testData, remove);
 			}
 			
-//			PrincipalComponents PCA= new PrincipalComponents();
-//			PCA.setInputFormat(trainData);
-//			PCA.setMaximumAttributes(500);
-			
-//			System.out.println(trainData.numAttributes());
-//			trainData=Filter.useFilter(trainData,PCA);
-//			System.out.println(trainData.numAttributes());
-//			//testData=Filter.useFilter(testData,PCA);
-//			System.out.println(trainData.numAttributes());
 
-//			AttributeSelection as=new AttributeSelection();
-//			as.reduceDimensionality(trainData);
-//			System.out.println("ohehe:");
-
-			
-
-//			AttributeSelectedClassifier asc=new AttributeSelectedClassifier();
-//			asc.setClassifier(classifier);
-//			asc.buildClassifier(trainData);
-//			ASEvaluation ase=asc.getEvaluator();
-//			ase.buildEvaluator(trainData);
-			// resampling
-			//System.out.println("trains:"+trainData.numInstances());
 			SMOTE sm=new SMOTE();
 			sm.setInputFormat(trainData);
 			trainData=Filter.useFilter(trainData, sm);
-			//System.out.println("trains:"+trainData.numInstances());
-			/////////
+
 			PrincipalComponents PCA= new PrincipalComponents();
 			AttributeSelection selector=new AttributeSelection();
 			Ranker ranker=new Ranker();
 			selector.setEvaluator(PCA);
 			selector.setSearch(ranker);
 			selector.SelectAttributes(trainData);
-			//System.out.println("train:"+trainData.numAttributes());
-			//System.out.println("test:"+testData.numAttributes());
+
 			trainData=selector.reduceDimensionality(trainData);
 			testData=selector.reduceDimensionality(testData);
-			//System.out.println("train:"+trainData.numAttributes());
-			//System.out.println("test:"+testData.numAttributes());
+
 
 			
 			Classifier classifier=new ADTree();
@@ -148,9 +444,6 @@ public class TrainTest {
 			classifier.setOptions(options);
 			classifier.buildClassifier(trainData);
 			//////
-//			FilteredClassifier fc=new FilteredClassifier();
-//			fc.setFilter(PCA);
-//			fc.setClassifier(classifier);
 			
 			
 			Evaluation eval=new Evaluation(trainData);
