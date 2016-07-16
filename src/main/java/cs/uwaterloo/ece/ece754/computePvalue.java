@@ -20,7 +20,55 @@ public class computePvalue {
 	public void compute(String projName, int num, int option,File fname){
 		if(option==6){
 			Util.res2csvfile(fname, compute6(num,projName));
+		}else if(option==8){
+			Util.res2csvfile(fname, compute8(num,projName));
 		}
+	}
+	public String compute8(int num,String pjName){ // test
+		String res=pjName+"\nP-Value,";
+		for(int i=0;i<num;i++){
+			BufferedReader reader9;			
+			try {
+				reader9 = TrainTest.getTestBufferReader(pjName, i);
+				Instances testData =new Instances(reader9);
+				reader9.close();
+				reader9 = TrainTest.getTrainBufferReader(pjName, i);
+				Instances trainData =new Instances(reader9);
+				reader9.close();
+				MannWhitneyUTest mtest=new MannWhitneyUTest();
+				double[] p1=new double[trainData.numAttributes()];
+				double[] x1=new double[trainData.size()];
+				double[] x2=new double[testData.size()];
+				double p=0;
+				Remove remove=new Remove();
+				remove.setOptions(new String[]{"-R","12-13"});
+				remove.setInputFormat(trainData);
+				trainData=Filter.useFilter(trainData, remove);
+				remove=new Remove();
+				remove.setOptions(new String[]{"-R","12-13"});
+				remove.setInputFormat(testData);
+				testData=Filter.useFilter(testData, remove);	
+				for(int j=0;j<trainData.numAttributes();j++){
+						for(int m=0;m<trainData.numInstances();m++){
+							x1[m]=trainData.instance(m).value(j);
+						}
+						for(int m=0;m<testData.numInstances();m++){
+							x2[m]=testData.instance(m).value(j);
+						}
+						p1[j]=mtest.mannWhitneyUTest(x1, x2);
+						p+=p1[j];
+				}
+				//System.out.println("id:"+i);
+				res+=p/testData.numAttributes();
+				res+=",";
+			} catch ( Exception e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}	
+			
+		}
+		res+="\n";
+		return res;	
 	}
 	public String compute6(int num, String projName){ // one vs one, from back to the front
 		num--;

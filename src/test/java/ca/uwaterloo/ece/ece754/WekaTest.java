@@ -28,16 +28,19 @@ public class WekaTest {
     	int[] num=new int[]{10,4,7,6,8,6};
     	computePvalue cp=new computePvalue();
     	File tempRes=new File("data/res");
-    	File fname=new File("data/op6_min_max_withRemovedfeature.csv");
+    	File fname=new File("data/usefirst16fetures.csv");
 //    	try {
 			//BufferedWriter bw=new BufferedWriter(new FileWriter(tempRes));
-	    	for(int i=0;i<4;i++){
+	    	for(int i=0;i<6;i++){
+	    		System.out.println(name[i]);
 //	    		System.out.println("index:"+i);
 	        	//evalRes res=ts.getTestRes(name[i], num[i], 4,new String[]{"-R","12-13"});
-	    		for(int j=0;j<num[i]-1;j++){
-		    		cp.compute(name[i], num[i]-j, 6, fname);
-		    		evalRes res=ts.getTestRes(name[i], num[i]-j, 6,new String[]{"-R","12-13"},fname);	    			
-	    		}
+//	    		for(int j=0;j<num[i]-1;j++){
+		    		//cp.compute(name[i], num[i], 7, fname);
+		    		evalRes res=ts.getTestRes(name[i], num[i], 10, null,fname);	 
+		    		//evalRes res=ts.getTestRes(name[i], num[i], 7,null,fname);	
+		    		//cp.compute(name[i], num[i], 7, fname);
+//	    		}
 
 	    		
 //	        	System.out.println("All -- "+name[i]);
