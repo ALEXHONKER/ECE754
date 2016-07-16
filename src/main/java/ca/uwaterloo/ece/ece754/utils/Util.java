@@ -5,13 +5,50 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 
+import weka.core.Attribute;
+import weka.core.Instance;
 import weka.core.Instances;
 import weka.core.converters.CSVSaver;
+import weka.core.converters.ConverterUtils.DataSource;
 import weka.filters.Filter;
 import weka.filters.unsupervised.attribute.Remove;
 
 public class Util {
+	public static Instances merge(Instances data1, Instances data2)
+		    throws Exception
+		{
+		    // Check where are the string attributes
+		    int asize = data1.numAttributes();
+		    boolean strings_pos[] = new boolean[asize];
+		    for(int i=0; i<asize; i++)
+		    {
+		        Attribute att = data1.attribute(i);
+		        strings_pos[i] = ((att.type() == Attribute.STRING) ||
+		                          (att.type() == Attribute.NOMINAL));
+		    }
 
+		    // Create a new dataset
+		    Instances dest = new Instances(data1);
+		    dest.setRelationName(data1.relationName() + "+" + data2.relationName());
+
+		    DataSource source = new DataSource(data2);
+		    Instances instances = source.getStructure();
+		    Instance instance = null;
+		    while (source.hasMoreElements(instances)) {
+		        instance = source.nextElement(instances);
+		        dest.add(instance);
+
+		        // Copy string attributes
+		        for(int i=0; i<asize; i++) {
+		            if(strings_pos[i]) {
+		                dest.instance(dest.numInstances()-1)
+		                    .setValue(i,instance.stringValue(i));
+		            }
+		        }
+		    }
+
+		    return dest;
+		}
 	public static void arff2csv(Instances ins, String[] option, String filePath){
 		Remove remove=new Remove();
 		try {

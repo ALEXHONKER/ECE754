@@ -8,8 +8,10 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
@@ -34,10 +36,21 @@ import weka.filters.Filter;
 import weka.filters.supervised.instance.Resample;
 import weka.filters.supervised.instance.SMOTE;
 import weka.filters.supervised.instance.SpreadSubsample;
+import weka.filters.unsupervised.attribute.Add;
+import weka.filters.unsupervised.attribute.AddValues;
+import weka.filters.unsupervised.attribute.MergeTwoValues;
 import weka.filters.unsupervised.attribute.Remove;
 import weka.filters.unsupervised.attribute.Reorder;
 
 public class TrainTest {
+	public static String[] attrIndex;
+	public TrainTest(){
+		attrIndex=new String[]{"change_id","401_lines_added","402_lines_deleted","403_lines_changed","404_loc",
+				"405_file_lines","406_time_of_day","407_day_of_week","408_previous_patches",
+				"409_previous_buggy_patches","410_file_age",
+				"411_commit_time","412_full_path","413_patch_lines",
+				"414_lines_inserted","415_lines_removed","500_Buggy?",};
+	}
 	/*
 	 * @param projName the name of the project
 	 * @param num the number of the test&train fold
@@ -47,6 +60,9 @@ public class TrainTest {
 	 * 				  3: with feature reduction (with SMOTE resample)
 	 * 				  7: choose 2 trianing set with the highest p-value to training the test set
 	 * 				  8: original use trainx to predict testx
+	 * 				  9: one nearest one with one highest p for training
+	 * 				  10:  use first 16 feature for training and testing, use trainX to predict testX
+	 * 				  11: use first 16 featuures, and use all previous train set for training, use Train(1~X) to predict TestX
 	 * @param rmOption	remove option for the training & test dataset, e.g., "-R 12-13"
 	 */
 	public evalRes getTestRes(String projName, int num, int option, String[] rmOption, File fname){ // option means the trianing method:
@@ -217,9 +233,9 @@ public class TrainTest {
 			Util.res2csvfile(fname, resCSV);
 			return res;		
 		}else if(option==8){ //use trainx to predict testx
-			for(int i=0;i<num;i++){
+			for(int i=num-1;i>=0;i--){
 				System.out.println(i);
-				double[][] tempRes=useLatestSetToTraining(projName,i,rmOption);
+				double[][] tempRes=option8(projName,i,rmOption);
 				resCSV+=Util.getF1(tempRes);
 				resCSV+=",";
 				res.TN+=tempRes[0][0];
@@ -251,8 +267,25 @@ public class TrainTest {
 			Util.res2csvfile(fname, resCSV);
 			return res;					
 		}else if(option == 10){ // use first 16 feature for training and testing
-			for(int i=num-1;i>=1;i--){
+			for(int i=num-1;i>=0;i--){
 				double[][] tempRes=option10(projName,i,rmOption);
+				resCSV+=Util.getF1(tempRes);
+				resCSV+=",";
+				res.TN+=tempRes[0][0];
+				res.TP+=tempRes[1][1];
+				res.FP+=tempRes[0][1];
+				res.FN+=tempRes[1][0];
+				System.out.println("index:"+i);
+				res.printRes();
+				//res.reset();
+			}
+			resCSV+="\n";
+			resCSV+="Total,"+res.getFmeasure()+",\n";
+			Util.res2csvfile(fname, resCSV);
+			return res;				
+		}else if(option ==11){
+			for(int i=num-1;i>=0;i--){
+				double[][] tempRes=option11(projName,i,rmOption);
 				resCSV+=Util.getF1(tempRes);
 				resCSV+=",";
 				res.TN+=tempRes[0][0];
@@ -273,7 +306,9 @@ public class TrainTest {
 		}
 		
 	}
-
+//	public void countAndRecord(File fname, double[][] tempRes){
+//		
+//	}
 	public static BufferedReader getTestBufferReader(String projName, int id){
 		try {
 			return  new BufferedReader(
@@ -386,15 +421,6 @@ public class TrainTest {
 	 * 
 	 */
 	public Instances[] generateSimilarIns(Instances[] ins){
-//		Arrays.sort(ins,new Comparator<Instances>(){
-//			@Override
-//			public int compare(Instances o1, Instances o2) {
-//				// TODO Auto-generated method stub
-//				return o1.numAttributes()-o2.numAttributes();
-//			}
-//			
-//		});
-		//ins[0].attribute(0).
 		HashMap<String,Integer> se=new HashMap<String,Integer>();
 		for(int i=0;i<ins[0].numAttributes();i++){
 			se.put(ins[0].attribute(i).name(),1);
@@ -452,46 +478,21 @@ public class TrainTest {
 				e.printStackTrace();
 			}
 		}
-//		for(int i=0;i<last;i++){
-//			Instances tempIns= new Instances(ins[last]);
-//			tempIns.delete();
-//			res[i]=tempIns;
-//			for(int j=0;j<ins[i].numInstances();j++){
-//				double[] ss1=ins[i].instance(j).toDoubleArray();
-//				double[] ss2=ins[i].instance(j).toDoubleArray();
-//				for(int k=0;k<ins[last].numAttributes();k++){
-//					String attrName=ins[last].attribute(k).name();
-//					int index=ins[i].attribute(attrName).index();
-//					ss1[k]=ss2[index];
-//				}
-//				tempIns.add(new DenseInstance(1.0, ss1));
-//			}
-//		}
-//		res[last]=ins[last];
-//		Attribute attr=ins[0].attribute(0);
-//		System.out.println("attrValue:"+ins[0].instance(10).value(0));
-//		Instance inst=ins[0].instance(0);
 		return ins;
 	}
-	public double[][] useLatestSetToTraining(String projName, int id, String[] rmOption){
+	public double[][] option8(String projName, int id, String[] rmOption){
 		try {
 			BufferedReader reader = getTestBufferReader(projName,id);
 			Instances testData =new Instances(reader);
 			reader.close();		
 			reader =getTrainBufferReader(projName,id);
 			Instances trainData=new Instances(reader);
-			testData=rmIns(testData,rmOption);
+			//testData=rmIns(testData,rmOption);
 			testData.setClassIndex(testData.numAttributes()-1);
-			testData=resample(testData);
-//			System.out.println("attrName:"+testData.attribute(2).name());
-//			System.out.println("attrName2:"+testData.attribute(3).name());
-			trainData=rmIns(trainData,rmOption);
+			//testData=resample(testData);
+			//trainData=rmIns(trainData,rmOption);
 			trainData.setClassIndex(trainData.numAttributes()-1);
 			trainData=resample(trainData);
-			Set<Attribute> se=new HashSet<Attribute>();
-			se.add(testData.attribute(1));
-//			System.out.println(se.contains(trainData.attribute(1)));
-//			System.out.println(se.contains(trainData.attribute(2)));
 			return ADTreeTrainTest(trainData,testData);
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
@@ -499,6 +500,122 @@ public class TrainTest {
 		}
 		return null;
 	}
+	/*
+	 * get the first 17 features from a given instances, and generate a new instances
+	 */
+	public Instances getFirst17Features(Instances ins){
+		Reorder re=new Reorder();
+		int[] order=new int[17];
+		for(int i=0;i<=16;i++){
+			order[i]=ins.attribute(attrIndex[i]).index();
+		}
+		//order[16]=ins.numAttributes()-1;
+		try {
+			re.setAttributeIndicesArray(order);
+			re.setInputFormat(ins);
+			return Filter.useFilter(ins, re);
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return null;
+	}
+ 	public double[][] option11(String projName, int id, String[] rmOption){
+		try {
+			BufferedReader reader = getTestBufferReader(projName,id);
+			Instances testData =new Instances(reader);
+			reader.close();		
+			reader =getTrainBufferReader(projName,id);
+			Instances trainData=new Instances(reader);
+			//testData=rmIns(testData,rmOption);
+			testData=getFirst17Features(testData);
+			testData.setClassIndex(testData.numAttributes()-1);
+			trainData=getFirst17Features(trainData);
+			//trainData.setClassIndex(trainData.numAttributes()-1);
+//			for(int i=0;i<trainData.numAttributes();i++){
+//				System.out.print("\""+trainData.attribute(i).name()+"\",");
+//			}
+			System.out.println("\n new trains:");
+			Set<String> setAttr11=new HashSet<String>();
+			Enumeration<Object> ens=trainData.attribute(11).enumerateValues();
+			while(ens.hasMoreElements()){
+				setAttr11.add((String)ens.nextElement());
+			}		
+			Set<String> setAttr12=new HashSet<String>();
+			ens=trainData.attribute(11).enumerateValues();
+			while(ens.hasMoreElements()){
+				setAttr12.add((String)ens.nextElement());
+			}	
+//			Add ad=new Add();
+//			ad.set
+//			AddValues avs=new AddValues();
+//			avs.setAttributeIndex("17");
+//			avs.setLabels("2,4");
+//			avs.setInputFormat(trainData);
+//			trainData=Filter.useFilter(trainData, avs);
+//			System.out.println(trainData.attribute(16).toString());
+			for(int i=0;i<id;i++){
+				Instances tempIns=new Instances(getTrainBufferReader(projName,i));
+				tempIns=getFirst17Features(tempIns);
+				AddValues av=new AddValues();
+				
+				//tempIns.setClassIndex(tempIns.numAttributes()-1);
+				Enumeration<Object> en=tempIns.attribute(11).enumerateValues();
+				StringBuilder sb=new StringBuilder();
+				while(en.hasMoreElements()){
+					String str=(String)en.nextElement();
+					if(!setAttr11.contains(str)){
+						setAttr11.add(str);
+						sb.append(str+",");
+						//trainData.attribute(11).addStringValue(str);
+					}
+				}
+				if(sb.length()>0)sb.delete(sb.length()-1, sb.length());
+				av.setAttributeIndex((trainData.attribute("411_commit_time").index()+1)+"");
+				av.setLabels(sb.toString());
+				av.setInputFormat(trainData);
+				trainData=Filter.useFilter(trainData, av);
+				
+				sb=new StringBuilder();
+				en=tempIns.attribute(12).enumerateValues();
+				while(en.hasMoreElements()){
+					String str=(String)en.nextElement();
+					if(!setAttr12.contains(str)){
+						setAttr12.add(str);
+						sb.append(str+",");
+						//trainData.attribute(12).addStringValue(str);
+					}
+				}
+				sb.delete(sb.length()-1, sb.length());
+				av.setAttributeIndex((trainData.attribute("412_full_path").index()+1)+"");
+				av.setLabels(sb.toString());
+				av.setInputFormat(trainData);
+				trainData=Filter.useFilter(trainData, av);
+//				Iterator<Object> it=tempIns.attribute(13).enumerateValues()
+//				for(String str: tempIns.attribute(13).enumerateValues()){
+//					
+//				}
+//				for(int j=0;j<tempIns.numAttributes();j++){
+//					System.out.print(tempIns.attribute(j).name()+" ");
+//				}
+//				System.out.println();
+				
+				//trainData.addAll(tempIns);
+				trainData = Util.merge(trainData,tempIns);
+			}
+			System.out.println("numAttr:"+trainData.numAttributes());
+			System.out.println("numAttr:"+testData.numAttributes());
+			System.out.println("equal:"+trainData.equalHeaders(testData));
+			//trainData=rmIns(trainData,rmOption);
+			trainData.setClassIndex(trainData.numAttributes()-1);
+			trainData=resample(trainData);
+			return ADTreeTrainTest(trainData,testData);
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return null;
+	}	
  	public double[][] option10(String projName, int id, String[] rmOption){
 		try {
 			BufferedReader reader = getTestBufferReader(projName,id);
@@ -507,22 +624,10 @@ public class TrainTest {
 			reader =getTrainBufferReader(projName,id);
 			Instances trainData=new Instances(reader);
 			//testData=rmIns(testData,rmOption);
-			Reorder re=new Reorder();
-			int[] order=new int[17];
-			for(int i=0;i<16;i++){
-				order[i]=i;
-			}
-			order[16]=testData.numAttributes()-1;
-			re.setInputFormat(testData);
-			testData=Filter.useFilter(testData, re);
+			testData=getFirst17Features(testData);
 			testData.setClassIndex(testData.numAttributes()-1);
-			testData=resample(testData);
-			for(int i=0;i<16;i++){
-				order[i]=i;
-			}
-			order[16]=trainData.numAttributes()-1;
-			re.setInputFormat(trainData);
-			trainData=Filter.useFilter(trainData, re);
+			//testData=resample(testData);
+			trainData=getFirst17Features(trainData);
 			//trainData=rmIns(trainData,rmOption);
 			trainData.setClassIndex(trainData.numAttributes()-1);
 			trainData=resample(trainData);
