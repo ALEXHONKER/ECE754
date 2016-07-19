@@ -49,14 +49,10 @@ public class Util {
 
 		    return dest;
 		}
-	public static void arff2csv(Instances ins, String[] option, String filePath){
-		Remove remove=new Remove();
+	public static void arff2csv(Instances ins, String filePath){
 		try {
-			remove.setOptions(option);
-			remove.setInputFormat(ins);
-			Instances newTrainData=Filter.useFilter(ins, remove);
 			CSVSaver cs =new  CSVSaver();
-			cs.setInstances(newTrainData);
+			cs.setInstances(ins);
 			cs.setFile(new File(filePath));
 			cs.writeBatch();
 		} catch (Exception e) {

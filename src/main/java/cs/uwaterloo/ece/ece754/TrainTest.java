@@ -63,6 +63,13 @@ public class TrainTest {
 	 * 				  9: one nearest one with one highest p for training
 	 * 				  10:  use first 16 feature for training and testing, use trainX to predict testX
 	 * 				  11: use first 16 featuures, and use all previous train set for training, use Train(1~X) to predict TestX
+	 * 				  12: use nearest set and another set with highest P value for training
+	 * 				  13: use two training sets with highest P value for training
+	 * 				  14: use one training set with highest P value for training
+	 * 				  15: for each test set, use each previous training set for training
+	 * 				  16: test of pvalue, (use all similar trairning set for training, divide the test set into 2 parts)
+	 * 				  17: generate csv file for each training & test arff
+	 * 				  18: use gloden training set for training , choose the highest training set for training
 	 * @param rmOption	remove option for the training & test dataset, e.g., "-R 12-13"
 	 */
 	public evalRes getTestRes(String projName, int num, int option, String[] rmOption, File fname){ // option means the trianing method:
@@ -246,7 +253,7 @@ public class TrainTest {
 				//res.printRes();
 			}
 			resCSV+="\n";
-			resCSV+="Total,"+res.getFmeasure()+",\n";
+			resCSV+="Total,"+res.getPre()*100+"%,"+res.getRec()*100+"%,"+res.getFmeasure()*100+"%,\n";
 			Util.res2csvfile(fname, resCSV);
 			return res;	
 		}else if(option ==9){// one neatest one with one highest p
@@ -263,7 +270,7 @@ public class TrainTest {
 				//res.reset();
 			}
 			resCSV+="\n";
-			resCSV+="Total,"+res.getFmeasure()+",\n";
+			resCSV+="Total,"+res.getPre()*100+"%,"+res.getRec()*100+"%,"+res.getFmeasure()*100+"%,\n";
 			Util.res2csvfile(fname, resCSV);
 			return res;					
 		}else if(option == 10){ // use first 16 feature for training and testing
@@ -280,7 +287,7 @@ public class TrainTest {
 				//res.reset();
 			}
 			resCSV+="\n";
-			resCSV+="Total,"+res.getFmeasure()+",\n";
+			resCSV+="Total,"+res.getPre()*100+"%,"+res.getRec()*100+"%,"+res.getFmeasure()*100+"%,\n";
 			Util.res2csvfile(fname, resCSV);
 			return res;				
 		}else if(option ==11){
@@ -297,9 +304,103 @@ public class TrainTest {
 				//res.reset();
 			}
 			resCSV+="\n";
-			resCSV+="Total,"+res.getFmeasure()+",\n";
+			resCSV+="Total,"+res.getPre()*100+"%,"+res.getRec()*100+"%,"+res.getFmeasure()*100+"%,\n";
 			Util.res2csvfile(fname, resCSV);
 			return res;				
+		}else if(option ==12){
+			for(int i=num-1;i>=0;i--){
+				double[][] tempRes=option12(projName,i,rmOption);
+				resCSV+=Util.getF1(tempRes);
+				resCSV+=",";
+				res.TN+=tempRes[0][0];
+				res.TP+=tempRes[1][1];
+				res.FP+=tempRes[0][1];
+				res.FN+=tempRes[1][0];
+				System.out.println("index:"+i);
+				res.printRes();
+				//res.reset();
+			}
+			resCSV+="\n";
+			resCSV+="Total,"+res.getPre()*100+"%,"+res.getRec()*100+"%,"+res.getFmeasure()*100+"%,\n";
+			Util.res2csvfile(fname, resCSV);
+			return res;				
+		}else if(option ==13){
+			for(int i=num-1;i>0;i--){
+				double[][] tempRes=option13(projName,i,rmOption);
+				resCSV+=Util.getF1(tempRes);
+				resCSV+=",";
+				res.TN+=tempRes[0][0];
+				res.TP+=tempRes[1][1];
+				res.FP+=tempRes[0][1];
+				res.FN+=tempRes[1][0];
+				System.out.println("index:"+i);
+				res.printRes();
+				//res.reset();
+			}
+			resCSV+="\n";
+			resCSV+="Total,"+res.getPre()*100+"%,"+res.getRec()*100+"%,"+res.getFmeasure()*100+"%,\n";
+			Util.res2csvfile(fname, resCSV);
+			return res;					
+		}else if(option ==14){
+			for(int i=num-1;i>=0;i--){
+				double[][] tempRes=option14(projName,i,rmOption);
+				resCSV+=Util.getF1(tempRes);
+				resCSV+=",";
+				res.TN+=tempRes[0][0];
+				res.TP+=tempRes[1][1];
+				res.FP+=tempRes[0][1];
+				res.FN+=tempRes[1][0];
+				System.out.println("index:"+i);
+				res.printRes();
+				//res.reset();
+			}
+			resCSV+="\n";
+			resCSV+="Total,"+res.getPre()*100+"%,"+res.getRec()*100+"%,"+res.getFmeasure()*100+"%,\n";
+			Util.res2csvfile(fname, resCSV);
+			return res;					
+		}else if(option ==15){
+			for(int i=num-1;i>=0;i--){
+				resCSV+=option15(projName,i,rmOption);
+			}
+			Util.res2csvfile(fname, resCSV);
+			return res;					
+		}else if(option==16){
+			for(int i=num-1;i>=0;i--){
+				double[][] tempRes=option16(projName,i,rmOption);
+				resCSV+=Util.getF1(tempRes);
+				resCSV+=",";
+				res.TN+=tempRes[0][0];
+				res.TP+=tempRes[1][1];
+				res.FP+=tempRes[0][1];
+				res.FN+=tempRes[1][0];
+				System.out.println("index:"+i);
+				res.printRes();
+				//res.reset();
+			}
+			resCSV+="\n";
+			resCSV+="Total,"+res.getPre()*100+"%,"+res.getRec()*100+"%,"+res.getFmeasure()*100+"%,\n";
+			Util.res2csvfile(fname, resCSV);
+			return res;			
+		}else if(option==17){
+			option17(projName,num,rmOption);
+			return null;
+		}else if(option ==18){
+			for(int i=num-1;i>=0;i--){
+				double[][] tempRes=option18(projName,i,rmOption);
+				resCSV+=Util.getF1(tempRes);
+				resCSV+=",";
+				res.TN+=tempRes[0][0];
+				res.TP+=tempRes[1][1];
+				res.FP+=tempRes[0][1];
+				res.FN+=tempRes[1][0];
+				System.out.println("index:"+i);
+				res.printRes();
+				//res.reset();
+			}
+			resCSV+="\n";
+			resCSV+="Total,"+res.getPre()*100+"%,"+res.getRec()*100+"%,"+res.getFmeasure()*100+"%,\n";
+			Util.res2csvfile(fname, resCSV);
+			return res;					
 		}
 		else {
 			return null;
@@ -312,6 +413,7 @@ public class TrainTest {
 	public static BufferedReader getTestBufferReader(String projName, int id){
 		try {
 			return  new BufferedReader(
+					//new FileReader("data/cleanedData/"+projName+"/arffsNoiseFilteredWOTestCases/"+id+"/test.arff"));
 						new FileReader("data/mingOri/exp-data/exp-data/"+projName+"/"+id+"/test.arff"));
 		} catch (FileNotFoundException e) {
 			// TODO Auto-generated catch block
@@ -323,6 +425,7 @@ public class TrainTest {
 		try {
 			return  new BufferedReader(
 						new FileReader("data/mingOri/exp-data/exp-data/"+projName+"/"+id+"/train.arff"));
+					//new FileReader("data/cleanedData/"+projName+"/arffsNoiseFilteredWOTestCases/"+id+"/train.arff"));
 		} catch (FileNotFoundException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -480,6 +583,29 @@ public class TrainTest {
 		}
 		return ins;
 	}
+	public void option17(String projName,int id, String[] rmOption){
+		for(int i=0;i<id;i++){
+			try {
+				BufferedReader reader;
+				reader = getTrainBufferReader(projName,i);
+				Instances trainData =rmIns(getFirst17Features(new Instances(reader)),rmOption);
+				reader.close();
+				trainData.setClassIndex(trainData.numAttributes()-1);
+				reader=getTestBufferReader(projName,i);
+				Instances testData;
+				testData = rmIns(getFirst17Features(new Instances(reader)),rmOption);
+				reader.close();
+				testData.setClassIndex(testData.numAttributes()-1);
+				String trainFilePath="data/csvData/"+projName+i+"_train.csv";
+				String testFilePath="data/csvData/"+projName+i+"_test.csv";
+				Util.arff2csv(trainData,  trainFilePath);
+				Util.arff2csv(testData, testFilePath);
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+	}
 	public double[][] option8(String projName, int id, String[] rmOption){
 		try {
 			BufferedReader reader = getTestBufferReader(projName,id);
@@ -500,6 +626,7 @@ public class TrainTest {
 		}
 		return null;
 	}
+	
 	/*
 	 * get the first 17 features from a given instances, and generate a new instances
 	 */
@@ -520,6 +647,352 @@ public class TrainTest {
 		}
 		return null;
 	}
+	public boolean UTest(Instances trainIns, Instances testIns){
+		//double[] p1=new double[trainIns.numAttributes()-1];
+		double[] x1=new double[trainIns.numInstances()];
+		double[] x2=new double[testIns.numInstances()];
+		double p=0;
+		MannWhitneyUTest mtest=new MannWhitneyUTest();
+		for(int j=0;j<trainIns.numAttributes()-1;j++){
+				if(!trainIns.attribute(j).isNominal()){
+					String attrName=trainIns.attribute(j).name();
+					for(int m=0;m<trainIns.numInstances();m++){
+						x1[m]=trainIns.instance(m).value(j);
+					}
+					Attribute attr=testIns.attribute(attrName);
+					for(int m=0;m<testIns.numInstances();m++){
+						x2[m]=testIns.instance(m).value(attr);
+					}
+					p=mtest.mannWhitneyUTest(x1, x2);
+					System.out.println("p:"+p);
+					if(p<0.00312) return false;					
+				}
+				//p+=p1[j];
+		}
+		return true;
+	}
+	public double[][] option16(String projName, int testId, String[] rmOption){
+		try {
+			Instances testData =getFirst17Features(new Instances(getTestBufferReader(projName,testId)));
+			Instances test1=getFirst17Features(new Instances(getTestBufferReader(projName,testId)));
+			test1.delete();
+			for(int i=0;i<testData.numInstances()/2;i++) test1.add(testData.instance(i));
+			Instances test2=getFirst17Features(new Instances(getTestBufferReader(projName,testId)));
+			test2.delete();
+			for(int i=testData.numInstances()/2;i<testData.numInstances();i++) test2.add(testData.instance(i));
+			
+			Instances trainData1=getFirst17Features(new Instances(getTrainBufferReader(projName,testId)));
+			trainData1.delete();
+			Instances trainData2=getFirst17Features(new Instances(getTrainBufferReader(projName,testId)));
+			trainData2.delete();
+			for(int i=0;i<=testId;i++){
+				for(int m=0;m<testData.numInstances();m++){
+					Instances tempTest=new Instances(testData);
+					tempTest.delete();
+					for(int n=m*200;m<testData.numInstances()&&n<(m+1)*200;m++){
+						tempTest.add(testData.instance(n));
+					}
+					Instances trainTemp=getFirst17Features(new Instances(getTrainBufferReader(projName,i)));
+					for(int j=0;j<trainTemp.numInstances()/200;j++){
+						Instances trainss=new Instances(trainTemp);
+						trainss.delete();
+						for(int k=j*200;k<trainTemp.numInstances()&&k<(j+1)*200;k++){
+							trainss.add(trainTemp.instance(k));
+							
+						}
+						if(UTest(trainss,tempTest)){ 
+							System.out.println("xixixi");
+							trainData1=mergeIns(new Instances[]{trainData1,trainss});
+						}
+//						if(UTest(trainss,tempTest)){ 
+//							System.out.println("xixixi");
+//							trainData2=mergeIns(new Instances[]{trainData2,trainss});
+//						}
+					}					
+				}
+
+//				if(UTest(trainTemp,test1)){
+//					System.out.println("xixixi");
+//					trainData1=mergeIns(new Instances[]{trainData1,trainTemp});
+//				}
+//				if(UTest(trainTemp,test2)){
+//					System.out.println("xixixi2");
+//					trainData2=mergeIns(new Instances[]{trainData2,trainTemp});
+//				}
+			}
+			Instances trainData=getFirst17Features(new Instances(getTrainBufferReader(projName,testId)));
+			if(trainData1.numInstances()==0) {System.out.println("ffuck"); trainData1=trainData;}
+			if(trainData2.numInstances()==0) {System.out.println("ffuck2"); trainData2=trainData;}
+			
+			trainData1.setClassIndex(trainData1.numAttributes()-1);
+			trainData2.setClassIndex(trainData2.numAttributes()-1);
+			test1.setClassIndex(test1.numAttributes()-1);
+			test2.setClassIndex(test2.numAttributes()-1);
+			trainData1=resample(trainData1);
+			trainData2=resample(trainData2);
+			double[][] matrix1= ADTreeTrainTest(trainData1,test1);
+			double[][] matrix2= ADTreeTrainTest(trainData2,test2);
+			for(int i=0;i<matrix1.length;i++){
+				for(int j=0;j<matrix1[0].length;j++){
+					matrix1[i][j]+=matrix2[i][j];
+				}
+			}
+			return matrix1;
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return null;
+	}
+	/*
+	 * generate gloden set, for each test set, use traing set with highest f1
+	 */
+ 	public double[][] option18(String projName, int testId, String[] rmOption){
+		try {
+			String f1="F1,";
+			String pvalue="P-value,";
+			double[][] max=new double[2][2];
+			double maxf1=0;
+			for(int i=testId;i>=0;i--){
+				BufferedReader reader = getTestBufferReader(projName,testId);
+				Instances testData =new Instances(reader);
+				reader.close();		
+				reader =getTrainBufferReader(projName,i);
+				Instances trainData=new Instances(reader);
+				//testData=rmIns(testData,rmOption);
+				testData=getFirst17Features(testData);
+				testData.setClassIndex(testData.numAttributes()-1);
+				//testData=resample(testData);
+				trainData=getFirst17Features(trainData);
+				//trainData=rmIns(trainData,rmOption);
+				trainData.setClassIndex(trainData.numAttributes()-1);
+				trainData=resample(trainData);
+				double[][] matrix= ADTreeTrainTest(trainData,testData);
+				f1+=Util.getF1(matrix);
+				if(Util.getF1(matrix)>maxf1){
+					max=matrix;
+					maxf1=Util.getF1(matrix);
+				}
+			}
+			return max;
+
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return null;
+	}
+ 	public String option15(String projName, int testId, String[] rmOption){
+		try {
+			String f1="F1,";
+			String pvalue="P-value,";
+			for(int i=testId;i>=0;i--){
+				BufferedReader reader = getTestBufferReader(projName,testId);
+				Instances testData =new Instances(reader);
+				reader.close();		
+				reader =getTrainBufferReader(projName,i);
+				Instances trainData=new Instances(reader);
+				//testData=rmIns(testData,rmOption);
+				testData=getFirst17Features(testData);
+				testData.setClassIndex(testData.numAttributes()-1);
+				//testData=resample(testData);
+				trainData=getFirst17Features(trainData);
+				//trainData=rmIns(trainData,rmOption);
+				trainData.setClassIndex(trainData.numAttributes()-1);
+				trainData=resample(trainData);
+				double[][] matrix= ADTreeTrainTest(trainData,testData);
+				f1+=Util.getF1(matrix);
+				f1+=",";
+				pvalue+=this.getPValueOfTwoInstances(rmIns(trainData,rmOption), rmIns(testData,rmOption));
+				pvalue+=",";
+			}
+			f1+="\n";
+			f1+=pvalue;
+			f1+="\n";
+			return f1;
+
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return null;
+	}
+	/*
+	 * get one set with highest P value for training
+	 */
+ 	public double[][] option14(String projName, int id, String[] rmOption){
+		try {
+			Instances testData = getFirst17Features(new Instances(getTestBufferReader(projName,id)));
+			Instances rmTestData=rmIns(getFirst17Features(new Instances(getTestBufferReader(projName,id))),rmOption);
+			double highestInstances=-1;
+			int idIns=0;
+			//pick two train set with the highest P-value
+			for(int i=0;i<=id;i++){
+				Instances tempTrainData=getFirst17Features(new Instances(getTrainBufferReader(projName,i)));
+				tempTrainData=rmIns(tempTrainData,rmOption);
+				//Instances[] tempTrainTest= new Instances[]{tempTrainData,rmTestData};
+				double p=getPValueOfTwoInstances(tempTrainData,rmTestData);
+				if(p>=highestInstances){
+					highestInstances=p;
+					idIns=i;
+				}
+			}			
+			Instances trainData=getFirst17Features(new Instances(getTrainBufferReader(projName,idIns)));
+			//trainData=rmIns(trainData,rmOption);			
+			//Instances trainData2=getFirst17Features(new Instances( getTrainBufferReader(projName,id)));
+			//trainData2=rmIns(trainData2,rmOption);
+			//Instances[] tempIns=new Instances[]{trainData,trainData2};
+			//trainData=mergeIns(tempIns);
+			
+			//testData=rmIns(tempIns[2],rmOption);
+			testData.setClassIndex(testData.numAttributes()-1);
+			trainData.setClassIndex(trainData.numAttributes()-1);
+			trainData= resample(trainData);
+			return ADTreeTrainTest(trainData,testData);
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return null;	
+	}	
+	/*
+	 * get two sets with highest P value for training
+	 */
+ 	public double[][] option13(String projName, int id, String[] rmOption){
+		try {
+			Instances testData = getFirst17Features(new Instances(getTestBufferReader(projName,id)));
+			Instances rmTestData=rmIns(getFirst17Features(new Instances(getTestBufferReader(projName,id))),rmOption);
+			double[] highestInstances=new double[]{-1,-1};
+			int[] idIns=new int[]{-1,-1};
+			//pick two train set with the highest P-value
+			for(int i=0;i<=id;i++){
+				Instances tempTrainData=getFirst17Features(new Instances(getTrainBufferReader(projName,i)));
+				tempTrainData=rmIns(tempTrainData,rmOption);
+				//Instances[] tempTrainTest= new Instances[]{tempTrainData,rmTestData};
+				double p=getPValueOfTwoInstances(tempTrainData,rmTestData);
+				if(p>=Math.min(highestInstances[0],highestInstances[1])){
+					if(highestInstances[0]>=highestInstances[1]){
+						highestInstances[1]=p;
+						idIns[1]=i;
+					}else{
+						highestInstances[0]=p;
+						idIns[0]=i;
+					}
+				}
+			}			
+			Instances trainData=getFirst17Features(new Instances(getTrainBufferReader(projName,idIns[0])));
+			//trainData=rmIns(trainData,rmOption);			
+			Instances trainData2=getFirst17Features(new Instances( getTrainBufferReader(projName,idIns[1])));
+			//trainData2=rmIns(trainData2,rmOption);
+			Instances[] tempIns=new Instances[]{trainData,trainData2};
+			trainData=mergeIns(tempIns);
+			
+			//testData=rmIns(tempIns[2],rmOption);
+			testData.setClassIndex(testData.numAttributes()-1);
+			trainData.setClassIndex(trainData.numAttributes()-1);
+			trainData= resample(trainData);
+			return ADTreeTrainTest(trainData,testData);
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return null;	
+	}
+ 	public double[][] option12(String projName, int id, String[] rmOption){
+		try {
+			Instances testData = getFirst17Features(new Instances(getTestBufferReader(projName,id)));
+			Instances rmTestData=rmIns(getFirst17Features(new Instances(getTestBufferReader(projName,id))),rmOption);
+			double highestInstances=-1;
+			int idIns=0;
+			//pick two train set with the highest P-value
+			for(int i=0;i<id;i++){
+				Instances tempTrainData=getFirst17Features(new Instances(getTrainBufferReader(projName,i)));
+				tempTrainData=rmIns(tempTrainData,rmOption);
+				//Instances[] tempTrainTest= new Instances[]{tempTrainData,rmTestData};
+				double p=getPValueOfTwoInstances(tempTrainData,rmTestData);
+				if(p>=highestInstances){
+					highestInstances=p;
+					idIns=i;
+				}
+			}			
+			Instances trainData=getFirst17Features(new Instances(getTrainBufferReader(projName,idIns)));
+			//trainData=rmIns(trainData,rmOption);			
+			Instances trainData2=getFirst17Features(new Instances( getTrainBufferReader(projName,id)));
+			//trainData2=rmIns(trainData2,rmOption);
+			Instances[] tempIns=new Instances[]{trainData,trainData2};
+			trainData=mergeIns(tempIns);
+			
+			//testData=rmIns(tempIns[2],rmOption);
+			testData.setClassIndex(testData.numAttributes()-1);
+			trainData.setClassIndex(trainData.numAttributes()-1);
+			trainData= resample(trainData);
+			return ADTreeTrainTest(trainData,testData);
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return null;	
+	}
+ 	/*
+ 	 * method for merging mulitple instances
+ 	 * @param trainData the array of instances, each instances should only contains 17 features;
+ 	 */
+ 	public Instances mergeIns(Instances[] trainData){
+		Set<String> setAttr11=new HashSet<String>();
+		Enumeration<Object> ens=trainData[0].attribute("411_commit_time").enumerateValues();
+		while(ens.hasMoreElements()){
+			setAttr11.add((String)ens.nextElement());
+		}	
+		Set<String> setAttr12=new HashSet<String>();
+		ens=trainData[0].attribute("412_full_path").enumerateValues();
+		while(ens.hasMoreElements()){
+			setAttr12.add((String)ens.nextElement());
+		}
+		Instances res=trainData[0];
+		Instances tempIns;
+		for(int i=1;i<trainData.length;i++){
+			tempIns=trainData[i];
+			AddValues av=new AddValues();
+			Enumeration<Object> en=tempIns.attribute("411_commit_time").enumerateValues();
+			StringBuilder sb=new StringBuilder();
+			while(en.hasMoreElements()){
+				String str=(String)en.nextElement();
+				if(!setAttr11.contains(str)){
+					setAttr11.add(str);
+					sb.append(str+",");
+				}
+			}
+			try {		
+				if(sb.length()>0) 
+					sb.delete(sb.length()-1, sb.length());
+				av.setAttributeIndex((res.attribute("411_commit_time").index()+1)+"");
+				av.setLabels(sb.toString());
+				av.setInputFormat(res);
+				res=Filter.useFilter(res, av);
+				
+				sb=new StringBuilder();
+				en=tempIns.attribute("412_full_path").enumerateValues();
+				while(en.hasMoreElements()){
+					String str=(String)en.nextElement();
+					if(!setAttr12.contains(str)){
+						setAttr12.add(str);
+						sb.append(str+",");
+					}
+				}
+				if(sb.length()>0)  sb.delete(sb.length()-1, sb.length());
+				av.setAttributeIndex((res.attribute("412_full_path").index()+1)+"");
+				av.setLabels(sb.toString());
+				av.setInputFormat(res);
+				res=Filter.useFilter(res, av);
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			res.addAll(tempIns);
+			//trainData = Util.merge(trainData,tempIns);
+		}
+		return res;
+ 	}
  	public double[][] option11(String projName, int id, String[] rmOption){
 		try {
 			BufferedReader reader = getTestBufferReader(projName,id);
@@ -532,81 +1005,61 @@ public class TrainTest {
 			testData.setClassIndex(testData.numAttributes()-1);
 			trainData=getFirst17Features(trainData);
 			//trainData.setClassIndex(trainData.numAttributes()-1);
-//			for(int i=0;i<trainData.numAttributes();i++){
-//				System.out.print("\""+trainData.attribute(i).name()+"\",");
-//			}
-			System.out.println("\n new trains:");
-			Set<String> setAttr11=new HashSet<String>();
-			Enumeration<Object> ens=trainData.attribute(11).enumerateValues();
-			while(ens.hasMoreElements()){
-				setAttr11.add((String)ens.nextElement());
-			}		
-			Set<String> setAttr12=new HashSet<String>();
-			ens=trainData.attribute(11).enumerateValues();
-			while(ens.hasMoreElements()){
-				setAttr12.add((String)ens.nextElement());
-			}	
-//			Add ad=new Add();
-//			ad.set
-//			AddValues avs=new AddValues();
-//			avs.setAttributeIndex("17");
-//			avs.setLabels("2,4");
-//			avs.setInputFormat(trainData);
-//			trainData=Filter.useFilter(trainData, avs);
-//			System.out.println(trainData.attribute(16).toString());
+			
+			Instances[] insArray=new Instances[id+1];
+			insArray[0]=trainData;
 			for(int i=0;i<id;i++){
-				Instances tempIns=new Instances(getTrainBufferReader(projName,i));
-				tempIns=getFirst17Features(tempIns);
-				AddValues av=new AddValues();
-				
-				//tempIns.setClassIndex(tempIns.numAttributes()-1);
-				Enumeration<Object> en=tempIns.attribute(11).enumerateValues();
-				StringBuilder sb=new StringBuilder();
-				while(en.hasMoreElements()){
-					String str=(String)en.nextElement();
-					if(!setAttr11.contains(str)){
-						setAttr11.add(str);
-						sb.append(str+",");
-						//trainData.attribute(11).addStringValue(str);
-					}
-				}
-				if(sb.length()>0)sb.delete(sb.length()-1, sb.length());
-				av.setAttributeIndex((trainData.attribute("411_commit_time").index()+1)+"");
-				av.setLabels(sb.toString());
-				av.setInputFormat(trainData);
-				trainData=Filter.useFilter(trainData, av);
-				
-				sb=new StringBuilder();
-				en=tempIns.attribute(12).enumerateValues();
-				while(en.hasMoreElements()){
-					String str=(String)en.nextElement();
-					if(!setAttr12.contains(str)){
-						setAttr12.add(str);
-						sb.append(str+",");
-						//trainData.attribute(12).addStringValue(str);
-					}
-				}
-				sb.delete(sb.length()-1, sb.length());
-				av.setAttributeIndex((trainData.attribute("412_full_path").index()+1)+"");
-				av.setLabels(sb.toString());
-				av.setInputFormat(trainData);
-				trainData=Filter.useFilter(trainData, av);
-//				Iterator<Object> it=tempIns.attribute(13).enumerateValues()
-//				for(String str: tempIns.attribute(13).enumerateValues()){
-//					
-//				}
-//				for(int j=0;j<tempIns.numAttributes();j++){
-//					System.out.print(tempIns.attribute(j).name()+" ");
-//				}
-//				System.out.println();
-				
-				//trainData.addAll(tempIns);
-				trainData = Util.merge(trainData,tempIns);
+				insArray[i+1]=getFirst17Features(new Instances(getTrainBufferReader(projName,i)));
 			}
-			System.out.println("numAttr:"+trainData.numAttributes());
-			System.out.println("numAttr:"+testData.numAttributes());
-			System.out.println("equal:"+trainData.equalHeaders(testData));
-			//trainData=rmIns(trainData,rmOption);
+			trainData=mergeIns(insArray);
+			
+//			Set<String> setAttr11=new HashSet<String>();
+//			Enumeration<Object> ens=trainData.attribute("411_commit_time").enumerateValues();
+//			while(ens.hasMoreElements()){
+//				setAttr11.add((String)ens.nextElement());
+//			}		
+//			Set<String> setAttr12=new HashSet<String>();
+//			ens=trainData.attribute("412_full_path").enumerateValues();
+//			while(ens.hasMoreElements()){
+//				setAttr12.add((String)ens.nextElement());
+//			}	
+//			for(int i=0;i<id;i++){
+//				Instances tempIns=new Instances(getTrainBufferReader(projName,i));
+//				tempIns=getFirst17Features(tempIns);
+//				AddValues av=new AddValues();
+//				Enumeration<Object> en=tempIns.attribute(11).enumerateValues();
+//				StringBuilder sb=new StringBuilder();
+//				while(en.hasMoreElements()){
+//					String str=(String)en.nextElement();
+//					if(!setAttr11.contains(str)){
+//						setAttr11.add(str);
+//						sb.append(str+",");
+//					}
+//				}
+//				if(sb.length()>0)sb.delete(sb.length()-1, sb.length());
+//				av.setAttributeIndex((trainData.attribute("411_commit_time").index()+1)+"");
+//				av.setLabels(sb.toString());
+//				av.setInputFormat(trainData);
+//				trainData=Filter.useFilter(trainData, av);
+//				
+//				sb=new StringBuilder();
+//				en=tempIns.attribute(12).enumerateValues();
+//				while(en.hasMoreElements()){
+//					String str=(String)en.nextElement();
+//					if(!setAttr12.contains(str)){
+//						setAttr12.add(str);
+//						sb.append(str+",");
+//					}
+//				}
+//				if(sb.length()>0) sb.delete(sb.length()-1, sb.length());
+//				av.setAttributeIndex((trainData.attribute("412_full_path").index()+1)+"");
+//				av.setLabels(sb.toString());
+//				av.setInputFormat(trainData);
+//				trainData=Filter.useFilter(trainData, av);
+//				trainData.addAll(tempIns);
+//				//trainData = Util.merge(trainData,tempIns);
+//			}
+//			//trainData=rmIns(trainData,rmOption);
 			trainData.setClassIndex(trainData.numAttributes()-1);
 			trainData=resample(trainData);
 			return ADTreeTrainTest(trainData,testData);
@@ -638,16 +1091,19 @@ public class TrainTest {
 		}
 		return null;
 	}
+ 	
  	public double[][] option9(String projName, int id, String[] rmOption){
 		BufferedReader reader;	
 		try {
-			reader = new BufferedReader(
-					new FileReader("data/mingOri/exp-data/exp-data/"+projName+"/"+id+"/test.arff"));
+			reader =getTestBufferReader(projName,id); 
+//					new BufferedReader(
+//					new FileReader("data/mingOri/exp-data/exp-data/"+projName+"/"+id+"/test.arff"));
 			Instances testData =new Instances(reader);
 			reader.close();
 			System.out.println("testlabel:"+testData.instance(0).value(testData.numAttributes()-1));
-			reader = new BufferedReader(
-					new FileReader("data/mingOri/exp-data/exp-data/"+projName+"/"+id+"/test.arff"));
+			reader= getTestBufferReader(projName,id); 
+//			reader = new BufferedReader(
+//					new FileReader("data/mingOri/exp-data/exp-data/"+projName+"/"+id+"/test.arff"));
 			Instances rmTestData=rmIns(new Instances(reader),rmOption);
 			reader.close();
 			double highestInstances=-1;
