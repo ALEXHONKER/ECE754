@@ -253,7 +253,8 @@ public class TrainTest {
 				//res.printRes();
 			}
 			resCSV+="\n";
-			resCSV+="Total,"+res.getPre()*100+"%,"+res.getRec()*100+"%,"+res.getFmeasure()*100+"%,\n";
+			resCSV+=res.getPre()+","+res.getRec()+","+res.getFmeasure()+",\n";
+			//resCSV+="Total,"+res.getPre()*100+"%,"+res.getRec()*100+"%,"+res.getFmeasure()*100+"%,\n";
 			Util.res2csvfile(fname, resCSV);
 			return res;	
 		}else if(option ==9){// one neatest one with one highest p
@@ -287,7 +288,8 @@ public class TrainTest {
 				//res.reset();
 			}
 			resCSV+="\n";
-			resCSV+="Total,"+res.getPre()*100+"%,"+res.getRec()*100+"%,"+res.getFmeasure()*100+"%,\n";
+			resCSV+=res.getPre()+","+res.getRec()+","+res.getFmeasure()+",\n";
+			//resCSV+="Total,"+res.getPre()*100+"%,"+res.getRec()*100+"%,"+res.getFmeasure()*100+"%,\n";
 			Util.res2csvfile(fname, resCSV);
 			return res;				
 		}else if(option ==11){

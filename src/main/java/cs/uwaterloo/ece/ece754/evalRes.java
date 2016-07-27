@@ -19,11 +19,11 @@ public class evalRes {
 	}
 	public double getPre(){
 		pre=TP/(TP+FP);
-		return TP/(TP+FP);
+		return pre;
 	}
 	public double getRec(){
 		rec=TP/(TP+FN);
-		return TP/(TP+FN);
+		return rec;
 	}
 	public double getFmeasure(){
 		getPre();

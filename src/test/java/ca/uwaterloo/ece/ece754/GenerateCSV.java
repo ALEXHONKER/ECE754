@@ -32,9 +32,9 @@ public class GenerateCSV {
 			String[] option=new String[]{"-R","12-13"};
 			String trainFilePath="data/csvData/"+projName+id+"_train.csv";
 			String testFilePath="data/csvData/"+projName+id+"_test.csv";
-			Util.arff2csv(trainData, option, trainFilePath);
+			Util.arff2csv(trainData, trainFilePath);
 			option=new String[]{"-R","12-13"};
-			Util.arff2csv(testData, option, testFilePath);
+			Util.arff2csv(testData, testFilePath);
 			
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
